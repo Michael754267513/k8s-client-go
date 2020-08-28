@@ -1,32 +1,30 @@
 package main
 
 import (
-	"github.com/owenliang/k8s-client-go/common"
-	"k8s.io/client-go/rest"
+	"flag"
 	"fmt"
+	"time"
+
+	"github.com/owenliang/k8s-client-go/common"
+	"github.com/owenliang/k8s-client-go/demo10/controller"
 	"github.com/owenliang/k8s-client-go/demo10/pkg/client/clientset/versioned"
 	"github.com/owenliang/k8s-client-go/demo10/pkg/client/informers/externalversions"
-	"time"
 	"github.com/owenliang/k8s-client-go/demo10/pkg/client/informers/externalversions/nginx_controller/v1"
-	"github.com/owenliang/k8s-client-go/demo10/controller"
+
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/informers"
-	core_v1 "k8s.io/client-go/informers/core/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog"
-	"flag"
 )
 
 func main() {
 	var (
-		restConf *rest.Config
-		crdClientset *versioned.Clientset
-		clientset *kubernetes.Clientset
-		informerFactory informers.SharedInformerFactory
+		restConf           *rest.Config
+		crdClientset       *versioned.Clientset
+		clientset          *kubernetes.Clientset
 		crdInformerFactory externalversions.SharedInformerFactory
-		podInformer core_v1.PodInformer
-		nginxInformer v1.NginxInformer
-		nginxController *controller.NginxController
-		err error
+		nginxInformer      v1.NginxInformer
+		nginxController    *controller.NginxController
+		err                error
 	)
 
 	// 日志参数
@@ -49,18 +47,14 @@ func main() {
 		goto FAIL
 	}
 
-	// 内建informer工厂
-	informerFactory = informers.NewSharedInformerFactory(clientset, time.Second * 120)
 	// crd Informer工厂
-	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second * 120)
+	crdInformerFactory = externalversions.NewSharedInformerFactory(crdClientset, time.Second*120)
 
-	// POD informer
-	podInformer = informerFactory.Core().V1().Pods()
 	// nginx informer
 	nginxInformer = crdInformerFactory.Mycompany().V1().Nginxes()
 
 	// 创建调度controller
-	nginxController = &controller.NginxController{Clientset: clientset, CrdClientset: crdClientset, PodInformer:podInformer, NginxInformer: nginxInformer}
+	nginxController = &controller.NginxController{Clientset: clientset, CrdClientset: crdClientset, NginxInformer: nginxInformer}
 	nginxController.Start()
 
 	// 等待

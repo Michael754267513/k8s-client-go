@@ -10,10 +10,7 @@
 </head>
 <body>
 <form>
-    namespace:<input type="text" id="podNs">
-    podName:<input  type="text" id="podName">
-    containerName:<input  type="text" id="containerName">
-    <input id="ssh" type="button" value="ssh">
+    <input id="ssh" type="button" value="登入容器测试按钮">
 </form>
 <div id="terminal"></div>
 <script>
@@ -39,12 +36,10 @@
         term.focus();
 
         // 获取要连接的容器信息
-        var podNs = document.getElementById("podNs").value
-        var podName = document.getElementById("podName").value
-        var containerName = document.getElementById("containerName").value
+
 
         // 连接websocket
-        ws = new WebSocket("ws://localhost:7777/ssh?" + "podNs=" + podNs + "&podName=" + podName + "&containerName=" + containerName );
+        ws = new WebSocket("ws://127.0.0.1:80/kubernetes/pod/websocket?" + "namespace=default&ContainerName=nginx&PodName=nginx-deployment-6bd645d5cb-lclqf" );
         ws.onopen = function(event) {
             console.log("onopen")
         }

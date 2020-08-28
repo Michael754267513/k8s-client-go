@@ -1,21 +1,21 @@
 package main
 
 /**
-	思路来源： 360 wayne 以及 https://github.com/kubernetes/client-go/issues/204
- */
+思路来源： 360 wayne 以及 https://github.com/kubernetes/client-go/issues/204
+*/
 
 import (
-	"net/http"
-	"github.com/owenliang/k8s-client-go/demo6/ws"
-	"github.com/owenliang/k8s-client-go/common"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/kubernetes"
-	"fmt"
-	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/remotecommand"
-	"github.com/gorilla/websocket"
 	"encoding/json"
+	"fmt"
+	"github.com/gorilla/websocket"
+	"github.com/owenliang/k8s-client-go/common"
+	"github.com/owenliang/k8s-client-go/demo6/ws"
+	"k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+	"net/http"
 )
 
 var (
@@ -24,21 +24,21 @@ var (
 
 // ssh流式处理器
 type streamHandler struct {
-	wsConn *ws.WsConnection
+	wsConn      *ws.WsConnection
 	resizeEvent chan remotecommand.TerminalSize
 }
 
 // web终端发来的包
 type xtermMessage struct {
-	MsgType string `json:"type"`	// 类型:resize客户端调整终端, input客户端输入
-	Input string `json:"input"`	// msgtype=input情况下使用
-	Rows uint16 `json:"rows"`	// msgtype=resize情况下使用
-	Cols uint16 `json:"cols"`// msgtype=resize情况下使用
+	MsgType string `json:"type"`  // 类型:resize客户端调整终端, input客户端输入
+	Input   string `json:"input"` // msgtype=input情况下使用
+	Rows    uint16 `json:"rows"`  // msgtype=resize情况下使用
+	Cols    uint16 `json:"cols"`  // msgtype=resize情况下使用
 }
 
 // executor回调获取web是否resize
 func (handler *streamHandler) Next() (size *remotecommand.TerminalSize) {
-	ret := <- handler.resizeEvent
+	ret := <-handler.resizeEvent
 	size = &ret
 	return
 }
@@ -46,7 +46,7 @@ func (handler *streamHandler) Next() (size *remotecommand.TerminalSize) {
 // executor回调读取web端的输入
 func (handler *streamHandler) Read(p []byte) (size int, err error) {
 	var (
-		msg *ws.WsMessage
+		msg      *ws.WsMessage
 		xtermMsg xtermMessage
 	)
 
@@ -64,7 +64,7 @@ func (handler *streamHandler) Read(p []byte) (size int, err error) {
 	if xtermMsg.MsgType == "resize" {
 		// 放到channel里，等remotecommand executor调用我们的Next取走
 		handler.resizeEvent <- remotecommand.TerminalSize{Width: xtermMsg.Cols, Height: xtermMsg.Rows}
-	} else if xtermMsg.MsgType == "input" {	// web ssh终端输入了字符
+	} else if xtermMsg.MsgType == "input" { // web ssh终端输入了字符
 		// copy到p数组中
 		size = len(xtermMsg.Input)
 		copy(p, xtermMsg.Input)
@@ -88,15 +88,15 @@ func (handler *streamHandler) Write(p []byte) (size int, err error) {
 
 func wsHandler(resp http.ResponseWriter, req *http.Request) {
 	var (
-		wsConn *ws.WsConnection
-		restConf *rest.Config
-		sshReq *rest.Request
-		podName string
-		podNs string
+		wsConn        *ws.WsConnection
+		restConf      *rest.Config
+		sshReq        *rest.Request
+		podName       string
+		podNs         string
 		containerName string
-		executor remotecommand.Executor
-		handler *streamHandler
-		err error
+		executor      remotecommand.Executor
+		handler       *streamHandler
+		err           error
 	)
 
 	// 解析GET参数
@@ -105,7 +105,7 @@ func wsHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 	podNs = req.Form.Get("podNs")
 	podName = req.Form.Get("podName")
-	containerName= req.Form.Get("containerName")
+	containerName = req.Form.Get("containerName")
 
 	// 得到websocket长连接
 	if wsConn, err = ws.InitWebsocket(resp, req); err != nil {
@@ -113,15 +113,14 @@ func wsHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	// 获取pods
-	podName = "nginx-deployment-5cbd8757f-d5qvx"
+	podName = "nginx-deployment-6bd645d5cb-lclqf"
 	podNs = "default"
-	containerName = "nginx"
+	containerName = "nginx" //多镜像的时候使用
 
 	// 获取k8s rest client配置
 	if restConf, err = common.GetRestConf(); err != nil {
 		goto END
 	}
-
 	// URL长相:
 	// https://172.18.11.25:6443/api/v1/namespaces/default/pods/nginx-deployment-5cbd8757f-d5qvx/exec?command=sh&container=nginx&stderr=true&stdin=true&stdout=true&tty=true
 	sshReq = clientset.CoreV1().RESTClient().Post().
@@ -144,7 +143,7 @@ func wsHandler(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	// 配置与容器之间的数据流处理回调
-	handler = &streamHandler{ wsConn: wsConn, resizeEvent: make(chan remotecommand.TerminalSize)}
+	handler = &streamHandler{wsConn: wsConn, resizeEvent: make(chan remotecommand.TerminalSize)}
 	if err = executor.Stream(remotecommand.StreamOptions{
 		Stdin:             handler,
 		Stdout:            handler,
