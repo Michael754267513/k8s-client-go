@@ -18,6 +18,7 @@ type Pods struct {
 }
 
 func ListNamespacesPods(namespace string) {
+
 	var (
 		clientset *kubernetes.Clientset
 		podsList  *core_v1.PodList

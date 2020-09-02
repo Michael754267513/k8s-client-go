@@ -31,7 +31,6 @@ func main() {
 		dr := dr.Items[i]
 		log.Printf("DestinationRule : %+v\n", dr.Spec)
 	}
-
 	var (
 		destinationRule *v1alpha3.DestinationRule
 		subsetList      []*networkingv1alpha3.Subset
